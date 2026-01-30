@@ -1,0 +1,12 @@
+{
+  "name": "luckkana-pro",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "AI Fortune Teller Chatbot",
+  "scripts": {
+    "dev": "python3 -m http.server 8000"
+  },
+  "keywords": ["astrology", "fortune", "chatbot", "gemini"],
+  "author": "",
+  "license": "MIT"
+}
