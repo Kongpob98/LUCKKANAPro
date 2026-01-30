@@ -20,12 +20,22 @@ export default async function handler(req, res) {
     try {
         const { message, model = 'gemini-2.5-flash-lite' } = req.body;
 
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
         // API Key จาก Environment Variable (ตั้งใน Vercel Dashboard)
         const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
         if (!GEMINI_API_KEY) {
-            return res.status(500).json({ error: 'API key not configured' });
+            console.error('❌ GEMINI_API_KEY not found in environment variables');
+            return res.status(500).json({ 
+                error: 'API key not configured',
+                hint: 'Please add GEMINI_API_KEY to Vercel Environment Variables'
+            });
         }
+
+        console.log('✅ API Key found, calling Gemini...');
 
         // เรียก Gemini API
         const response = await fetch(
@@ -54,14 +64,23 @@ export default async function handler(req, res) {
         const data = await response.json();
 
         if (!response.ok) {
-            return res.status(response.status).json({ error: data.error?.message || 'API request failed' });
+            console.error('❌ Gemini API Error:', data);
+            return res.status(response.status).json({ 
+                error: data.error?.message || 'API request failed',
+                details: data
+            });
         }
+
+        console.log('✅ Gemini response received');
 
         // ส่งกลับไปให้ Frontend
         return res.status(200).json(data);
 
     } catch (error) {
-        console.error('Error:', error);
-        return res.status(500).json({ error: error.message });
+        console.error('❌ Server Error:', error);
+        return res.status(500).json({ 
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 }
