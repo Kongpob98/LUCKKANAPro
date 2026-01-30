@@ -4,8 +4,14 @@
     let isAiTyping = false;
     
     // Gemini API Configuration
-    const GEMINI_API_KEY = 'AIzaSyAlalX0jht7EDUPR2xxQoX59FpTvCGXsQo';
+    // Production: ใช้ Vercel Serverless Function
+    // Development: ใช้ API Key จาก config.js
+    const IS_PRODUCTION = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    const USE_SERVERLESS = IS_PRODUCTION; // เปลี่ยนเป็น true เพื่อใช้ Serverless บน localhost ด้วย
+    
+    const GEMINI_API_KEY = window.CONFIG?.GEMINI_API_KEY || 'YOUR_API_KEY_HERE';
     const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
+    const SERVERLESS_API_URL = '/api/gemini'; // Vercel Function
     // Model options: 'gemini-2.5-flash' (ฉลาดสุด 20/day) | 'gemini-2.5-flash-lite' (เร็วกว่า โควต้าสูงกว่า) | 'gemini-2.0-flash' (1,500/day)
     
     // 🔍 Debug Mode - เปิดเพื่อดูข้อมูลทั้งหมดที่ส่งให้ Gemini
@@ -279,17 +285,37 @@ ${relevantKnowledge}
             // 🔍 Debug: แสดง Request Body
             if (DEBUG_MODE) {
                 console.group('🔍 DEBUG: Full Request Body');
+                console.log('🌐 Using:', USE_SERVERLESS ? 'Serverless Function' : 'Direct API');
                 console.log(JSON.stringify(requestBody, null, 2));
                 console.groupEnd();
             }
             
-            const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody)
-            });
+            let response;
+            
+            if (USE_SERVERLESS) {
+                // ใช้ Vercel Serverless Function (Production)
+                console.log('📤 Sending to Serverless Function...');
+                response = await fetch(SERVERLESS_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: `${systemPrompt}\n\nคำถาม: ${userMessage}`,
+                        model: 'gemini-2.5-flash-lite'
+                    })
+                });
+            } else {
+                // ใช้ Direct API (Development)
+                console.log('📤 Sending to Gemini API directly...');
+                response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+            }
 
             console.log('📥 Response status:', response.status);
             

@@ -25,3 +25,5 @@ yarn-debug.log*
 # API Keys (extra safety)
 **/config/api-keys.js
 **/config/secrets.js
+js/config.js
+config.js
